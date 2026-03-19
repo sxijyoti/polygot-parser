@@ -53,3 +53,8 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+build/
+polygot-parser/src/main
+src/CMakeFiles
+src/_deps
