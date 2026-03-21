@@ -9,6 +9,7 @@ typedef struct {
     char from[256];
     char to[256];
     char type[24];
+    char lang[8];
 } grp_edge;
 
 typedef struct {

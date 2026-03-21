@@ -5,12 +5,16 @@
 
 #define IR_MAX_SYMBOLS 512
 #define IR_MAX_DEPS    1024
+#define IR_MAX_ARGS    16
+#define IR_ARG_LEN     64
 
 typedef struct {
     char name[64];
     char lang[8]; 
     char file[256];
     int line;
+    char args[IR_MAX_ARGS][IR_ARG_LEN];
+    int args_count;
 } ir_symbol;
 
 // for dependency graph
@@ -31,7 +35,8 @@ typedef struct {
 
 //  api
 void ir_init(ir_result *ir);
-void ir_add_symbol(ir_result *ir, const char *name, const char *lang, const char *file, int line);
+ir_symbol *ir_add_symbol(ir_result *ir, const char *name, const char *lang, const char *file, int line);
+void ir_symbol_add_args(ir_symbol *sym, const char *arg);
 void ir_add_dependency(ir_result *ir, const char *from_file, const char *module, const char *type, const char *lang);
 
 #endif
