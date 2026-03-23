@@ -119,7 +119,7 @@ void test_parse_dir_mixed(void) {
     TEST_ASSERT_NOT_NULL(strstr(json, "\"js\""));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"rb\""));
     TEST_ASSERT_NULL(strstr(json, "hidden_py"));
-    TEST_ASSERT_NULL(strstr(json, "inner_py"));
+    TEST_ASSERT_NOT_NULL(strstr(json, "inner_py"));
 
     polyparser_free_json(json);
     polyparser_free_res(res);

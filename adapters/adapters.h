@@ -19,5 +19,7 @@ int py_adapter(const char *fpath, ir_result *ir);
 int js_adapter(const char *fpath, ir_result *ir);
 int rb_adapter(const char *fpath, ir_result *ir);
 
+int resolve_module_path(const char *from_file, const char *module, lang_id lang, char *out, size_t out_cap);
+
 
 #endif

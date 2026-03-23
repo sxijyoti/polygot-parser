@@ -174,7 +174,11 @@ int py_adapter(const char *fpath, ir_result *ir) {
             for (uint16_t c = 0; c < match.capture_count; c++) {
                 char mod[256] = {0};
                 node_text(match.captures[c].node, src, mod, sizeof(mod));
-                ir_add_dependency(ir, fpath, mod, "import", "py");
+                char resolved[256] = {0};
+                const char *target = mod;
+                if (resolve_module_path(fpath, mod, PYTHON, resolved, sizeof(resolved)))
+                    target = resolved;
+                ir_add_dependency(ir, fpath, target, "import", "py");
             }
         }
         ts_query_cursor_delete(cur);

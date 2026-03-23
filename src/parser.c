@@ -81,7 +81,21 @@ while ((ent = readdir(dir)) != NULL) {
     snprintf(fpath, sizeof(fpath), "%s/%s", dirpath, ent->d_name);
 
     struct stat st;
-    if (stat(fpath, &st) == 0 && S_ISDIR(st.st_mode)) continue;
+    if (stat(fpath, &st) != 0) continue;
+
+    if (S_ISDIR(st.st_mode)) {
+        // recurse into subdirectories
+        polyparser_result *sub = polyparser_parse_dir(fpath);
+        if (sub) {
+            // merge IR and deps
+            for (int i = 0; i < sub->ir.symbol_count && res->ir.symbol_count < IR_MAX_SYMBOLS; i++)
+                res->ir.symbols[res->ir.symbol_count++] = sub->ir.symbols[i];
+            for (int i = 0; i < sub->ir.dep_count && res->ir.dep_count < IR_MAX_DEPS; i++)
+                res->ir.deps[res->ir.dep_count++] = sub->ir.deps[i];
+            polyparser_free_res(sub);
+        }
+        continue;
+    }
 
     lang_id lang = detect_lang(fpath);
     if (lang != UNSUPPORTED_LANG)

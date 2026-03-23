@@ -195,7 +195,11 @@ int rb_adapter(const char *fpath, ir_result *ir) {
             if (got_fn && got_mod &&
                 (strcmp(fn_name, "require")          == 0 ||
                  strcmp(fn_name, "require_relative")  == 0)) {
-                ir_add_dependency(ir, fpath, mod_name, "require", "rb");
+                char resolved[256] = {0};
+                const char *target = mod_name;
+                if (resolve_module_path(fpath, mod_name, RUBY, resolved, sizeof(resolved)))
+                    target = resolved;
+                ir_add_dependency(ir, fpath, target, "require", "rb");
             }
         }
         ts_query_cursor_delete(cur);

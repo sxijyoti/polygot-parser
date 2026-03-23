@@ -20,11 +20,14 @@ void test_build_edges(void) {
     TEST_ASSERT_EQUAL_INT(2, g.edge_count);
     TEST_ASSERT_EQUAL_STRING("a.js", g.edges[0].from);
     TEST_ASSERT_EQUAL_STRING("./b.py", g.edges[0].to);
-    TEST_ASSERT_EQUAL_STRING("require", g.edges[0].type);
+    TEST_ASSERT_EQUAL_INT(GRP_NODE_FILE, g.edges[0].from_kind);
+    TEST_ASSERT_EQUAL_INT(GRP_NODE_MODULE, g.edges[0].to_kind);
+    TEST_ASSERT_EQUAL_INT(GRP_EDGE_REQUIRE, g.edges[0].rel_kind);
     TEST_ASSERT_EQUAL_STRING("js", g.edges[0].lang);
 
     TEST_ASSERT_EQUAL_STRING("c.rb", g.edges[1].from);
     TEST_ASSERT_EQUAL_STRING("json", g.edges[1].to);
+    TEST_ASSERT_EQUAL_INT(GRP_EDGE_REQUIRE, g.edges[1].rel_kind);
 }
 
 void test_build_empty(void) {

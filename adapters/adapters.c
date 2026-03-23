@@ -2,6 +2,105 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
+
+static int file_exists(const char *path) {
+    struct stat st;
+    return path && stat(path, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+static int try_with_ext(const char *base, const char *ext, char *out, size_t cap) {
+    if (!base || !ext) return 0;
+    if (snprintf(out, cap, "%s%s", base, ext) >= (int)cap) return 0;
+    return file_exists(out);
+}
+
+static int resolve_js(const char *base_dir, const char *module, char *out, size_t cap) {
+    if (!module) return 0;
+    const char *exts[] = {".js", ".mjs", ".cjs"};
+    char candidate[512];
+
+    if (snprintf(candidate, sizeof(candidate), "%s/%s", base_dir, module) >= (int)sizeof(candidate))
+        return 0;
+
+    if (file_exists(candidate)) {
+        strncpy(out, candidate, cap - 1); out[cap-1] = '\0';
+        return 1;
+    }
+
+    // try extensions
+    for (size_t i = 0; i < sizeof(exts)/sizeof(exts[0]); i++) {
+        if (try_with_ext(candidate, exts[i], out, cap)) return 1;
+    }
+
+    // if module points to dir, try index.*
+    struct stat st;
+    if (stat(candidate, &st) == 0 && S_ISDIR(st.st_mode)) {
+        for (size_t i = 0; i < sizeof(exts)/sizeof(exts[0]); i++) {
+            if (snprintf(out, cap, "%s/index%s", candidate, exts[i]) < (int)cap && file_exists(out))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static int resolve_py(const char *base_dir, const char *module, char *out, size_t cap) {
+    if (!module) return 0;
+    char path[512];
+    // dotted to path
+    snprintf(path, sizeof(path), "%s", module);
+    for (char *p = path; *p; ++p) if (*p == '.') *p = '/';
+    char candidate[512];
+    if (snprintf(candidate, sizeof(candidate), "%s/%s.py", base_dir, path) >= (int)sizeof(candidate))
+        return 0;
+    if (file_exists(candidate)) {
+        strncpy(out, candidate, cap - 1); out[cap-1] = '\0';
+        return 1;
+    }
+    return 0;
+}
+
+static int resolve_rb(const char *base_dir, const char *module, char *out, size_t cap) {
+    if (!module) return 0;
+    char candidate[512];
+    if (snprintf(candidate, sizeof(candidate), "%s/%s", base_dir, module) >= (int)sizeof(candidate))
+        return 0;
+    if (file_exists(candidate)) {
+        strncpy(out, candidate, cap - 1); out[cap-1] = '\0';
+        return 1;
+    }
+    if (try_with_ext(candidate, ".rb", out, cap)) return 1;
+    return 0;
+}
+
+int resolve_module_path(const char *from_file, const char *module, lang_id lang, char *out, size_t out_cap) {
+    if (!from_file || !module || !out || out_cap == 0) return 0;
+    const char *slash = strrchr(from_file, '/');
+    char base_dir[512];
+    if (slash) {
+        size_t n = (size_t)(slash - from_file);
+        if (n >= sizeof(base_dir)) n = sizeof(base_dir) - 1;
+        memcpy(base_dir, from_file, n);
+        base_dir[n] = '\0';
+    } else {
+        strcpy(base_dir, ".");
+    }
+
+    // only attempt resolution for relative-like modules; otherwise leave as-is
+    int is_relative = (module[0] == '.' || strchr(module, '/') != NULL);
+    if (!is_relative) return 0;
+
+    switch (lang) {
+    case JS:
+        return resolve_js(base_dir, module, out, out_cap);
+    case PYTHON:
+        return resolve_py(base_dir, module, out, out_cap);
+    case RUBY:
+        return resolve_rb(base_dir, module, out, out_cap);
+    default:
+        return 0;
+    }
+}
 
 static const char *file_ext(const char *path) {
     const char *dot = NULL;

@@ -189,7 +189,11 @@ int js_adapter(const char *fpath, ir_result *ir) {
             for (uint16_t c = 0; c < match.capture_count; c++) {
                 char mod[256] = {0};
                 node_text(match.captures[c].node, src, mod, sizeof(mod));
-                ir_add_dependency(ir, fpath, mod, "import", "js");
+                char resolved[256] = {0};
+                const char *target = mod;
+                if (resolve_module_path(fpath, mod, JS, resolved, sizeof(resolved)))
+                    target = resolved;
+                ir_add_dependency(ir, fpath, target, "import", "js");
             }
         }
         ts_query_cursor_delete(cur);
@@ -218,7 +222,11 @@ int js_adapter(const char *fpath, ir_result *ir) {
                 } else if (strncmp(cap, "module", nlen) == 0 && got_fn) {
                     char mod[256] = {0};
                     node_text(match.captures[c].node, src, mod, sizeof(mod));
-                    ir_add_dependency(ir, fpath, mod, "require", "js");
+                    char resolved[256] = {0};
+                    const char *target = mod;
+                    if (resolve_module_path(fpath, mod, JS, resolved, sizeof(resolved)))
+                        target = resolved;
+                    ir_add_dependency(ir, fpath, target, "require", "js");
                 }
             }
         }

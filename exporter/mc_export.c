@@ -214,6 +214,25 @@ fail:
     return 0;
 }
 
+static const char *edge_kind_str(grp_edge_kind k) {
+    switch (k) {
+    case GRP_EDGE_IMPORT:  return "import";
+    case GRP_EDGE_REQUIRE: return "require";
+    case GRP_EDGE_DEFINE:  return "define";
+    case GRP_EDGE_EXPORT:  return "export";
+    default: return "unknown";
+    }
+}
+
+static const char *node_kind_str(grp_node_kind k) {
+    switch (k) {
+    case GRP_NODE_FILE:   return "file";
+    case GRP_NODE_SYMBOL: return "symbol";
+    case GRP_NODE_MODULE: return "module";
+    default: return "unknown";
+    }
+}
+
 static int emit_graph_object(sbuf *s, const grp *g, int indent) {
     if (!sb_puts(s, "\"graph\": {")) return 0;
     if (!sb_newline_indent(s, indent + 1)) return 0;
@@ -227,10 +246,14 @@ static int emit_graph_object(sbuf *s, const grp *g, int indent) {
             if (!sb_putc(s, '{')) return 0;
             if (!sb_puts(s, "\"from\": ")) return 0;
             if (!json_esp_append(s, g->edges[i].from)) return 0;
+            if (!sb_puts(s, ", \"from_kind\": ")) return 0;
+            if (!json_esp_append(s, node_kind_str(g->edges[i].from_kind))) return 0;
             if (!sb_puts(s, ", \"to\": ")) return 0;
             if (!json_esp_append(s, g->edges[i].to)) return 0;
+            if (!sb_puts(s, ", \"to_kind\": ")) return 0;
+            if (!json_esp_append(s, node_kind_str(g->edges[i].to_kind))) return 0;
             if (!sb_puts(s, ", \"type\": ")) return 0;
-            if (!json_esp_append(s, g->edges[i].type)) return 0;
+            if (!json_esp_append(s, edge_kind_str(g->edges[i].rel_kind))) return 0;
             if (!sb_puts(s, ", \"lang\": ")) return 0;
             if (!json_esp_append(s, g->edges[i].lang)) return 0;
             if (!sb_putc(s, '}')) return 0;
