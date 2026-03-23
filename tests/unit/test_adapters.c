@@ -28,6 +28,18 @@ static void example_path(char *out, size_t cap, const char *relative) {
     snprintf(out, cap, "examples/%s", relative);
 }
 
+static int has_symbol(const ir_result *ir, const char *name, ir_symbol_kind kind, const char *lang) {
+    for (int i = 0; i < ir->symbol_count; i++) {
+        const ir_symbol *sym = &ir->symbols[i];
+        if (strcmp(sym->name, name) == 0 &&
+            sym->kind == kind &&
+            strcmp(sym->lang, lang) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void test_detect_supported(void) {
     TEST_ASSERT_EQUAL_INT(PYTHON, detect_lang("file.py"));
     TEST_ASSERT_EQUAL_INT(JS, detect_lang("file.js"));
@@ -59,9 +71,9 @@ void test_py_adapter(void) {
 
     TEST_ASSERT_EQUAL_INT(0, lang_adapter(py_path, PYTHON, &ir));
     TEST_ASSERT_TRUE(ir.symbol_count >= 1);
-    TEST_ASSERT_EQUAL_STRING("sum", ir.symbols[0].name);
-    TEST_ASSERT_EQUAL_STRING("py", ir.symbols[0].lang);
-    TEST_ASSERT_EQUAL_INT(2, ir.symbols[0].args_count);
+    TEST_ASSERT_TRUE(has_symbol(&ir, "sum", IR_SYMBOL_FUNCTION, "py"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "Calculator", IR_SYMBOL_CLASS, "py"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "DATA", IR_SYMBOL_OBJECT, "py"));
 }
 
 void test_js_adapter(void) {
@@ -73,8 +85,9 @@ void test_js_adapter(void) {
 
     TEST_ASSERT_EQUAL_INT(0, lang_adapter(js_path, JS, &ir));
     TEST_ASSERT_TRUE(ir.symbol_count >= 1);
-    TEST_ASSERT_EQUAL_STRING("run", ir.symbols[0].name);
-    TEST_ASSERT_EQUAL_INT(0, ir.symbols[0].args_count);
+    TEST_ASSERT_TRUE(has_symbol(&ir, "run", IR_SYMBOL_FUNCTION, "js"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "Runner", IR_SYMBOL_CLASS, "js"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "settings", IR_SYMBOL_OBJECT, "js"));
 }
 
 void test_rb_adapter(void) {
@@ -86,8 +99,9 @@ void test_rb_adapter(void) {
 
     TEST_ASSERT_EQUAL_INT(0, lang_adapter(rb_path, RUBY, &ir));
     TEST_ASSERT_TRUE(ir.symbol_count >= 1);
-    TEST_ASSERT_EQUAL_STRING("greet", ir.symbols[0].name);
-    TEST_ASSERT_EQUAL_INT(0, ir.symbols[0].args_count);
+    TEST_ASSERT_TRUE(has_symbol(&ir, "greet", IR_SYMBOL_FUNCTION, "rb"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "Greeter", IR_SYMBOL_CLASS, "rb"));
+    TEST_ASSERT_TRUE(has_symbol(&ir, "settings", IR_SYMBOL_OBJECT, "rb"));
 }
 
 int main(void) {

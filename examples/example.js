@@ -1,5 +1,12 @@
 const py = require('./example.py');
 const rb = require('./example.rb');
+const settings = { count: 1 };
+
+class Runner {
+    start() {
+        return "started";
+    }
+}
 
 function run() {
     console.log("Calling Python functions...");

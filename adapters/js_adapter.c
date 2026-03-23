@@ -129,6 +129,53 @@ int js_adapter(const char *fpath, ir_result *ir) {
         ts_query_delete(qfunc);
     }
 
+    static const char class_q[] =
+        "(class_declaration"
+        "  name: (identifier) @name)";
+
+    TSQuery *qclass = ts_query_new(tree_sitter_javascript(), class_q, sizeof(class_q) - 1, &err_off, &err_type);
+    if (!qclass) {
+        fprintf(stderr, "Javascript class query error at offset %u (type %d)\n", err_off, (int)err_type);
+    } else {
+        TSQueryCursor *cur = ts_query_cursor_new();
+        ts_query_cursor_exec(cur, qclass, root);
+        TSQueryMatch match;
+        while (ts_query_cursor_next_match(cur, &match)) {
+            for (uint16_t c = 0; c < match.capture_count; c++) {
+                char cname[64] = {0};
+                node_text(match.captures[c].node, src, cname, sizeof(cname));
+                int line = (int)ts_node_start_point(match.captures[c].node).row + 1;
+                ir_add_symbol(ir, cname, IR_SYMBOL_CLASS, "js", fpath, line);
+            }
+        }
+        ts_query_cursor_delete(cur);
+        ts_query_delete(qclass);
+    }
+
+    static const char obj_q[] =
+        "(variable_declarator"
+        "  name: (identifier) @name"
+        "  value: (object))";
+
+    TSQuery *qobj = ts_query_new(tree_sitter_javascript(), obj_q, sizeof(obj_q) - 1, &err_off, &err_type);
+    if (!qobj) {
+        fprintf(stderr, "Javascript object query error at offset %u (type %d)\n", err_off, (int)err_type);
+    } else {
+        TSQueryCursor *cur = ts_query_cursor_new();
+        ts_query_cursor_exec(cur, qobj, root);
+        TSQueryMatch match;
+        while (ts_query_cursor_next_match(cur, &match)) {
+            for (uint16_t c = 0; c < match.capture_count; c++) {
+                char oname[64] = {0};
+                node_text(match.captures[c].node, src, oname, sizeof(oname));
+                int line = (int)ts_node_start_point(match.captures[c].node).row + 1;
+                ir_add_symbol(ir, oname, IR_SYMBOL_OBJECT, "js", fpath, line);
+            }
+        }
+        ts_query_cursor_delete(cur);
+        ts_query_delete(qobj);
+    }
+
     static const char esm_q[] =
         "(import_statement"
         "  source: (string (string_fragment) @module))";

@@ -1,6 +1,12 @@
 def sum(a, b):
     return a + b
 
+class Calculator:
+    def multiply(self, a, b):
+        return a * b
+
+DATA = {"foo": 1}
+
 def sub(a, b):
     return a - b
 
