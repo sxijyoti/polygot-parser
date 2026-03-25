@@ -220,6 +220,7 @@ static const char *edge_kind_str(grp_edge_kind k) {
     case GRP_EDGE_REQUIRE: return "require";
     case GRP_EDGE_DEFINE:  return "define";
     case GRP_EDGE_EXPORT:  return "export";
+    case GRP_EDGE_MEMBER_OF: return "member_of";
     default: return "unknown";
     }
 }

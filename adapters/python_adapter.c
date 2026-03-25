@@ -54,6 +54,20 @@ static void collect_params(TSNode params, const char *src, ir_symbol *sym) {
     }
 }
 
+static void find_python_owner_class(TSNode node, const char *src, char *owner, size_t cap) {
+    owner[0] = '\0';
+    TSNode cur = node;
+    while (!ts_node_is_null(cur)) {
+        if (strcmp(ts_node_type(cur), "class_definition") == 0) {
+            TSNode class_name = ts_node_child_by_field_name(cur, "name", 4);
+            if (!ts_node_is_null(class_name))
+                node_text(class_name, src, owner, cap);
+            return;
+        }
+        cur = ts_node_parent(cur);
+    }
+}
+
 int py_adapter(const char *fpath, ir_result *ir) {
     uint32_t src_len = 0;
     char *src = read_file(fpath, &src_len);
@@ -101,9 +115,13 @@ int py_adapter(const char *fpath, ir_result *ir) {
 
             if (got_name) {
                 char fname[64] = {0};
+                char owner[64] = {0};
                 node_text(name_nd, src, fname, sizeof(fname));
                 int line = (int)ts_node_start_point(name_nd).row + 1;
                 ir_symbol *sym = ir_add_symbol(ir, fname, IR_SYMBOL_FUNCTION, "py", fpath, line);
+                find_python_owner_class(name_nd, src, owner, sizeof(owner));
+                if (sym && owner[0] != '\0')
+                    ir_symbol_set_owner(sym, owner);
                 if (sym && got_params)
                     collect_params(params_nd, src, sym);
             }

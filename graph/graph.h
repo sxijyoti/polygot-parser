@@ -15,7 +15,8 @@ typedef enum {
     GRP_EDGE_IMPORT = 0,
     GRP_EDGE_REQUIRE = 1,
     GRP_EDGE_DEFINE = 2,
-    GRP_EDGE_EXPORT = 3
+    GRP_EDGE_EXPORT = 3,
+    GRP_EDGE_MEMBER_OF = 4
 } grp_edge_kind;
 
 typedef struct {

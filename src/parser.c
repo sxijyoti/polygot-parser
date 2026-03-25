@@ -10,6 +10,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 struct polyparser_result {
     ir_result ir;
@@ -24,6 +25,29 @@ static polyparser_result *result_new(void) {
     return res;
 }
 
+static void safe_copy(char *dst, size_t cap, const char *src) {
+    if (!dst || cap == 0) return;
+    if (!src) {
+        dst[0] = '\0';
+        return;
+    }
+    strncpy(dst, src, cap - 1);
+    dst[cap - 1] = '\0';
+}
+
+static const char *canonical_path_or_input(const char *in, char *out, size_t cap) {
+    if (!in || !out || cap == 0) return in;
+#ifndef _WIN32
+    char resolved[PATH_MAX];
+    if (realpath(in, resolved) != NULL) {
+        safe_copy(out, cap, resolved);
+        return out;
+    }
+#endif
+    safe_copy(out, cap, in);
+    return out;
+}
+
 // C API 
 
 polyparser_result *polyparser_parse_file(const char *fpath) {
@@ -35,7 +59,10 @@ polyparser_result *polyparser_parse_file(const char *fpath) {
     polyparser_result *res = result_new();
     if (!res) return NULL;
 
-    if (lang_adapter(fpath, lang, &res->ir) != 0) {
+    char canonical_fpath[PATH_MAX];
+    const char *input_path = canonical_path_or_input(fpath, canonical_fpath, sizeof(canonical_fpath));
+
+    if (lang_adapter(input_path, lang, &res->ir) != 0) {
         free(res);
         return NULL;
     }
@@ -51,12 +78,14 @@ polyparser_result *polyparser_parse_files(const char **fpaths, int count){
 
     for (int i = 0; i < count; i++) {
         const char *fp = fpaths[i];
+        char canonical_fp[PATH_MAX];
+        const char *input_path = canonical_path_or_input(fp, canonical_fp, sizeof(canonical_fp));
         lang_id lang = detect_lang(fp);
         if (lang == UNSUPPORTED_LANG) {
             fprintf(stderr, "Unsupported extension: %s\n", fp);
             continue;
         }
-        if (lang_adapter(fp, lang, &res->ir) != 0)
+        if (lang_adapter(input_path, lang, &res->ir) != 0)
             fprintf(stderr, "Failed to parse: %s\n", fp);
     }
 
@@ -98,8 +127,11 @@ while ((ent = readdir(dir)) != NULL) {
     }
 
     lang_id lang = detect_lang(fpath);
-    if (lang != UNSUPPORTED_LANG)
-        lang_adapter(fpath, lang, &res->ir);
+    if (lang != UNSUPPORTED_LANG) {
+        char canonical_fp[PATH_MAX];
+        const char *input_path = canonical_path_or_input(fpath, canonical_fp, sizeof(canonical_fp));
+        lang_adapter(input_path, lang, &res->ir);
+    }
     }
 closedir(dir);
 

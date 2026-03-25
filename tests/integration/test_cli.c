@@ -119,8 +119,8 @@ void test_o_file(void) {
     TEST_ASSERT_NOT_NULL(strstr(txt, "\"py\""));
     TEST_ASSERT_NOT_NULL(strstr(txt, "\"js\""));
     TEST_ASSERT_NOT_NULL(strstr(txt, "\"rb\""));
-    TEST_ASSERT_NOT_NULL(strstr(txt, "./example.py"));
-    TEST_ASSERT_NOT_NULL(strstr(txt, "./example.rb"));
+    TEST_ASSERT_NOT_NULL(strstr(txt, "example.py"));
+    TEST_ASSERT_NOT_NULL(strstr(txt, "example.rb"));
 
     free(txt);
     remove(out_path);

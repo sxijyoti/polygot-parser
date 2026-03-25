@@ -15,8 +15,11 @@ void test_export_json(void) {
 
     ir_symbol *sym = ir_add_symbol(&ir, "foo", IR_SYMBOL_FUNCTION, "py", "x.py", 1);
     TEST_ASSERT_NOT_NULL(sym);
+    ir_symbol_set_owner(sym, "Bar");
     ir_symbol_add_args(sym, "x");
     ir_symbol_add_args(sym, "y");
+
+    TEST_ASSERT_NOT_NULL(ir_add_symbol(&ir, "Bar", IR_SYMBOL_CLASS, "py", "x.py", 1));
 
     ir_add_dependency(&ir, "x.js", "./x.py", "require", "js");
 
@@ -33,6 +36,7 @@ void test_export_json(void) {
     TEST_ASSERT_NOT_NULL(strstr(json, "\"graph\""));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"edges\""));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"x.js\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"member_of\""));
 
     free(json);
 }

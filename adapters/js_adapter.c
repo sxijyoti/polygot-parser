@@ -62,6 +62,21 @@ static void collect_params(TSNode params, const char *src, ir_symbol *sym) {
     }
 }
 
+static void find_js_owner_class(TSNode node, const char *src, char *owner, size_t cap) {
+    owner[0] = '\0';
+    TSNode cur = node;
+    while (!ts_node_is_null(cur)) {
+        const char *type = ts_node_type(cur);
+        if (strcmp(type, "class_declaration") == 0 || strcmp(type, "class") == 0) {
+            TSNode class_name = ts_node_child_by_field_name(cur, "name", 4);
+            if (!ts_node_is_null(class_name))
+                node_text(class_name, src, owner, cap);
+            return;
+        }
+        cur = ts_node_parent(cur);
+    }
+}
+
 // this is main entry point
 int js_adapter(const char *fpath, ir_result *ir) {
     uint32_t src_len = 0;
@@ -90,7 +105,10 @@ int js_adapter(const char *fpath, ir_result *ir) {
         " (variable_declarator"
         "   name: (identifier) @name"
         "   value: (arrow_function"
-        "     parameters: (formal_parameters) @params))]";
+        "     parameters: (formal_parameters) @params))"
+        " (method_definition"
+        "   name: (_) @name"
+        "   parameters: (formal_parameters) @params)]";
 
     TSQuery *qfunc = ts_query_new(tree_sitter_javascript(), func_q, sizeof(func_q) - 1, &err_off, &err_type);
     if (!qfunc) {
@@ -118,9 +136,13 @@ int js_adapter(const char *fpath, ir_result *ir) {
 
             if (got_name) {
                 char fname[64] = {0};
+                char owner[64] = {0};
                 node_text(name_nd, src, fname, sizeof(fname));
                 int line = (int)ts_node_start_point(name_nd).row + 1;
                 ir_symbol *sym = ir_add_symbol(ir, fname, IR_SYMBOL_FUNCTION, "js", fpath, line);
+                find_js_owner_class(name_nd, src, owner, sizeof(owner));
+                if (sym && owner[0] != '\0')
+                    ir_symbol_set_owner(sym, owner);
                 if (sym && got_params)
                     collect_params(params_nd, src, sym);
             }

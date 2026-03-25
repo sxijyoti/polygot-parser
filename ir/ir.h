@@ -20,6 +20,7 @@ typedef struct {
     int is_exported;
     char lang[8]; 
     char file[256];
+    char owner[64];
     int line;
     char args[IR_MAX_ARGS][IR_ARG_LEN];
     int args_count;
@@ -44,6 +45,7 @@ typedef struct {
 //  api
 void ir_init(ir_result *ir);
 ir_symbol *ir_add_symbol(ir_result *ir, const char *name, ir_symbol_kind kind, const char *lang, const char *file, int line);
+void ir_symbol_set_owner(ir_symbol *sym, const char *owner);
 void ir_symbol_add_args(ir_symbol *sym, const char *arg);
 void ir_add_dependency(ir_result *ir, const char *from_file, const char *module, const char *type, const char *lang);
 

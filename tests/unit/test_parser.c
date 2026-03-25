@@ -36,7 +36,7 @@ static int write_text(const char *path, const char *txt) {
     return 1;
 }
 
-void test_parse_file_ok(void) {
+void test_parse_file_check(void) {
     char py_path[512];
     example_path(py_path, sizeof(py_path), "example.py");
 
@@ -47,6 +47,12 @@ void test_parse_file_ok(void) {
     TEST_ASSERT_NOT_NULL(json);
     TEST_ASSERT_NOT_NULL(strstr(json, "\"py\""));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"sum\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"classes\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"Calculator\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"objects\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"DATA\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"member_of\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"multiply\""));
 
     polyparser_free_json(json);
     polyparser_free_res(res);
@@ -82,6 +88,8 @@ void test_parse_files_mixed(void) {
     TEST_ASSERT_NOT_NULL(json);
     TEST_ASSERT_NOT_NULL(strstr(json, "\"py\""));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"js\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"classes\""));
+    TEST_ASSERT_NOT_NULL(strstr(json, "\"objects\""));
 
     polyparser_free_json(json);
     polyparser_free_res(res);
@@ -155,7 +163,7 @@ void test_parse_dir_empty(void) {
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_parse_file_ok);
+    RUN_TEST(test_parse_file_check);
     RUN_TEST(test_parse_file_bad_ext);
     RUN_TEST(test_parse_files_empty);
     RUN_TEST(test_parse_files_mixed);

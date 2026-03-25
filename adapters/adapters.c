@@ -3,10 +3,32 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <limits.h>
+#include <stdlib.h>
 
 static int file_exists(const char *path) {
     struct stat st;
     return path && stat(path, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+static void safe_copy(char *dst, size_t cap, const char *src) {
+    if (!dst || cap == 0) return;
+    if (!src) {
+        dst[0] = '\0';
+        return;
+    }
+    strncpy(dst, src, cap - 1);
+    dst[cap - 1] = '\0';
+}
+
+static void canonicalize_if_exists(char *path, size_t cap) {
+    if (!path || path[0] == '\0') return;
+#ifndef _WIN32
+    char resolved[PATH_MAX];
+    if (realpath(path, resolved) != NULL) {
+        safe_copy(path, cap, resolved);
+    }
+#endif
 }
 
 static int try_with_ext(const char *base, const char *ext, char *out, size_t cap) {
@@ -33,7 +55,7 @@ static int resolve_js(const char *base_dir, const char *module, char *out, size_
         if (try_with_ext(candidate, exts[i], out, cap)) return 1;
     }
 
-    // if module points to dir, try index.*
+    // if module points to dir then try index.*
     struct stat st;
     if (stat(candidate, &st) == 0 && S_ISDIR(st.st_mode)) {
         for (size_t i = 0; i < sizeof(exts)/sizeof(exts[0]); i++) {
@@ -86,20 +108,31 @@ int resolve_module_path(const char *from_file, const char *module, lang_id lang,
         strcpy(base_dir, ".");
     }
 
-    // only attempt resolution for relative-like modules; otherwise leave as-is
+    // only attempt resolution for relative like modules
     int is_relative = (module[0] == '.' || strchr(module, '/') != NULL);
     if (!is_relative) return 0;
 
+    int check = 0;
     switch (lang) {
     case JS:
-        return resolve_js(base_dir, module, out, out_cap);
+        check = resolve_js(base_dir, module, out, out_cap);
+        break;
     case PYTHON:
-        return resolve_py(base_dir, module, out, out_cap);
+        check = resolve_py(base_dir, module, out, out_cap);
+        break;
     case RUBY:
-        return resolve_rb(base_dir, module, out, out_cap);
+        check = resolve_rb(base_dir, module, out, out_cap);
+        break;
     default:
-        return 0;
+        check = 0;
+        break;
     }
+
+    if (check) {
+        canonicalize_if_exists(out, out_cap);
+    }
+
+    return check;
 }
 
 static const char *file_ext(const char *path) {
